@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+/* ============================================================
+   BASE
+   ============================================================ */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Noto Sans KR', sans-serif;
+  line-height: 1.8;
+}
+
+/* ============================================================
+   ANNOTATION STRUCTURE (.ann)
+   ============================================================
+   Usage:
+   <span class="ann">
+     <span class="ann-text u-blue">원문 텍스트</span>
+     <span class="ann-note n-blue">핵심개념</span>
+   </span>
+*/
+/* PRD §5/§8 — inline-block이 핵심: 텍스트 흐름에 참여하면서 아래에 note를 가짐 */
+.ann {
+  display: inline-block;
+  vertical-align: top;
+  line-height: 2.2;
+  margin: 0 1px;
+}
+
+.ann-text {
+  display: inline;
+  line-height: 2.2;
+}
+
+/* 항상 보이는 작은 주석 */
+.ann-note {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.3;
+  margin-top: 1px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* 예시 구간 꺾쇠 */
+.eg-open  { color: #639922; font-weight: 600; margin-right: 1px; }
+.eg-close { color: #639922; font-weight: 600; margin-left: 1px; }
+
+/* 문장 끊기 슬래시 */
+.slash { color: #BA7517; font-weight: 600; margin: 0 3px; font-size: 0.95em; }
+
+/* 인과 화살표 — 본문 위에 얹히는 느낌으로 크고 굵게 */
+.connect-arrow {
+  display: inline-block;
+  color: #7F77DD;
+  font-size: 1.15em;
+  font-weight: 700;
+  margin: 0 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  letter-spacing: -1px;
+}
+
+/* 대조 표시 */
+.contrast-mark {
+  display: inline-block;
+  color: #e24b4a;
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 0 6px;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   UNDERLINE COLORS (u-*)
+   ============================================================ */
+.u-blue   { border-bottom: 2.5px solid #3b82f6; --ann-color: #3b82f6; }
+.u-red    { border-bottom: 2.5px solid #ef4444; --ann-color: #ef4444; }
+.u-amber  { border-bottom: 2.5px solid #f59e0b; --ann-color: #f59e0b; }
+.u-green  { border-bottom: 2.5px solid #22c55e; --ann-color: #22c55e; }
+.u-purple { border-bottom: 2.5px solid #a855f7; --ann-color: #a855f7; }
+
+/* Keyword visual marks — shape drawn AROUND the keyword span */
+.kw-circle { outline: 1.5px solid var(--ann-color, #666); outline-offset: 3px; border-radius: 50px; padding: 0 2px; }
+.kw-box    { outline: 1.5px solid var(--ann-color, #666); outline-offset: 2px; border-radius: 3px; padding: 0 1px; }
+.kw-star   { outline: 1.5px solid var(--ann-color, #666); outline-offset: 2px; border-radius: 3px; font-weight: 700; }
+.kw-tri    { border-bottom: 2px double var(--ann-color, #666); }
+
+/* ============================================================
+   NOTE COLORS (n-*) — no background, just colored text
+   ============================================================ */
+.n-blue   { color: #1d4ed8; }
+.n-red    { color: #b91c1c; }
+.n-amber  { color: #b45309; }
+.n-green  { color: #15803d; }
+.n-purple { color: #7c3aed; }
+
+/* ============================================================
+   HIGHLIGHT COLORS (hl-*)
+   ============================================================ */
+.hl-yellow { background-color: #fef08a; }
+.hl-blue   { background-color: #bfdbfe; }
+.hl-pink   { background-color: #fbcfe8; }
+.hl-orange { background-color: #fed7aa; }
+
+/* ============================================================
+   QUESTION EVIDENCE (qe-*) — 문제 선지 근거 표시
+   ============================================================ */
+.qe-1 { background-color: #ccfbf1; border-bottom: 1.5px solid #0d9488; }
+.qe-2 { background-color: #ede9fe; border-bottom: 1.5px solid #7c3aed; }
+.qe-3 { background-color: #ffe4e6; border-bottom: 1.5px solid #e11d48; }
+.qe-4 { background-color: #fef3c7; border-bottom: 1.5px solid #d97706; }
+.qe-5 { background-color: #dbeafe; border-bottom: 1.5px solid #2563eb; }
+
+.qe-label {
+  font-size: 0.65em;
+  font-weight: 900;
+  vertical-align: super;
+  margin-left: 2px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   STRUCTURAL MARKERS
+   ============================================================ */
+/* Bracketed example text */
+.eg-bracket {
+  color: #6b7280;
+  font-size: 0.9em;
+}
+.eg-bracket::before { content: '('; }
+.eg-bracket::after  { content: ')'; }
+
+/* Sentence boundary slash */
+.slash {
+  color: #9ca3af;
+  margin: 0 2px;
+  font-weight: normal;
+}
+
+/* Connect arrow between related spans */
+.connect-arrow {
+  display: inline-block;
+  color: #6366f1;
+  font-size: 0.85rem;
+  margin: 0 3px;
+}
+
+/* Question tag */
+.q-tag {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  padding: 0 4px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+/* ============================================================
+   PASSAGE TEXT STYLING
+   ============================================================ */
+.passage-text {
+  font-size: 1rem;
+  line-height: 2;
+  word-break: keep-all;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  /* Hide UI controls */
+  .no-print,
+  button,
+  nav,
+  header,
+  .tab-bar,
+  .stage-controls {
+    display: none !important;
+  }
+
+  /* Reset backgrounds for print */
+  body {
+    background: white;
+    color: black;
+    font-size: 10pt;
+    line-height: 1.6;
+  }
+
+  /* Page layout */
+  .print-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Annotations in print */
+  .ann-note {
+    display: inline !important;
+    position: static !important;
+    transform: none !important;
+    font-size: 7pt;
+    padding: 0 3px;
+    margin-left: 2px;
+    border-radius: 2px;
+  }
+
+  /* Highlights print as light shading */
+  .hl-yellow { background-color: #fef9c3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hl-blue   { background-color: #eff6ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hl-pink   { background-color: #fdf2f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hl-orange { background-color: #fff7ed !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Underlines print in color */
+  .u-blue, .u-red, .u-amber, .u-green, .u-purple {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Avoid page breaks inside important elements */
+  .ann, .paragraph-card, .summary-row {
+    page-break-inside: avoid;
+  }
+
+  /* Add page margins */
+  @page {
+    margin: 2cm 2.5cm;
+  }
+}
+
+/* ============================================================
+   UTILITY / ANIMATION
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.35s ease forwards;
+}
+
+@keyframes unlock {
+  0%   { transform: rotate(-10deg); }
+  50%  { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.unlock-anim {
+  animation: unlock 0.5s ease;
+}
