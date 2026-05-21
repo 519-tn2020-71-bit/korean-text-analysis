@@ -128,7 +128,12 @@ export async function POST(req: Request) {
       const preview = svgText.slice(0, 500)
       return NextResponse.json({ error: 'SVG 생성 실패: 유효한 SVG가 반환되지 않았습니다', raw: preview }, { status: 500 })
     }
-    const cleanSvg = svgText.slice(svgStart, svgEnd)
+    // XSS 방어: SVG에서 script 태그, 이벤트 핸들러, javascript: URL 제거
+    let cleanSvg = svgText.slice(svgStart, svgEnd)
+    cleanSvg = cleanSvg
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/javascript\s*:/gi, '')
 
     // Store SVG in analysis_json
     const { data: existing } = await supabase

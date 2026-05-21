@@ -2,6 +2,8 @@ export const runtime = 'nodejs'   // pptxgenjs requires Node.js (not Edge)
 export const maxDuration = 60     // 복잡한 PPT 생성 시 시간 여유
 
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import PptxGenJS from 'pptxgenjs'
 import type { AnalysisResult, Paragraph, Annotation } from '@/types'
 
@@ -655,6 +657,23 @@ function addQuestionsSlide(pres: PptxGenJS, questionsText: string) {
 // ── 메인 POST 핸들러 ──────────────────────────────────────────────────────────
 export async function POST(req: Request) {
   try {
+    // ── 인증 확인 ────────────────────────────────────────────────────────────
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: (cs) => cs.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    }
+
     const {
       passageTitle,
       passageYear,

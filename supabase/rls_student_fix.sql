@@ -21,4 +21,6 @@ RETURNS TABLE (
   ORDER BY p.created_at DESC;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.get_released_passages() TO anon, authenticated;
+-- anon(비로그인) 사용자는 접근 불가 — authenticated(로그인된 학생/교사)만 허용
+REVOKE EXECUTE ON FUNCTION public.get_released_passages() FROM anon;
+GRANT EXECUTE ON FUNCTION public.get_released_passages() TO authenticated;

@@ -8,8 +8,12 @@ export async function POST(req: Request) {
   try {
     const { passageText, passageId, questionsText } = await req.json()
 
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!passageText || !passageId) {
       return NextResponse.json({ error: '지문 내용과 ID가 필요합니다' }, { status: 400 })
+    }
+    if (!UUID_RE.test(passageId)) {
+      return NextResponse.json({ error: '잘못된 passageId 형식입니다' }, { status: 400 })
     }
 
     const cookieStore = await cookies()
