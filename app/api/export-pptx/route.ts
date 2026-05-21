@@ -232,13 +232,63 @@ function addOverviewSlide(pres: PptxGenJS, analysis: AnalysisResult) {
   })
 }
 
-// ── 슬라이드 3~N: 단락 슬라이드 ─────────────────────────────────────────────
-function addParagraphSlide(
+// ── 슬라이드 A: 지문 텍스트 ──────────────────────────────────────────────────
+function addParaTextSlide(
   pres: PptxGenJS,
   paraText: string,
   paraData: Paragraph,
   paraNo: number,
   totalParas: number,
+) {
+  const slide = pres.addSlide()
+  slide.background = { color: C.WHITE }
+
+  const tag = C.TAG[paraData.function_tag] ?? C.TAG.부연
+  const relKey = paraData.relation_to_prev ?? (paraNo === 1 ? '도입' : '부연')
+  const relColor = C.REL[relKey] ?? C.REL.부연
+
+  // 헤더
+  slide.addShape('rect', { x: 0, y: 0, w: 10, h: 0.55, fill: { color: C.HEADER_BG }, line: { color: C.HEADER_BG } })
+  slide.addText(`단락  ${paraNo}`, { x: 0.3, y: 0, w: 1.2, h: 0.55, fontSize: 15, bold: true, color: C.WHITE, valign: 'middle' })
+
+  // 관계 배지
+  slide.addShape('rect', { x: 1.55, y: 0.12, w: 1.0, h: 0.3, fill: { color: relColor, transparency: 20 }, line: { color: relColor }, rectRadius: 0.06 })
+  slide.addText(relKey, { x: 1.55, y: 0.12, w: 1.0, h: 0.3, fontSize: 9, bold: true, color: C.HEADER_BG, align: 'center', valign: 'middle' })
+
+  // 기능 배지
+  slide.addShape('rect', { x: 2.62, y: 0.12, w: 1.0, h: 0.3, fill: { color: tag.bg, transparency: 10 }, line: { color: tag.text }, rectRadius: 0.06 })
+  slide.addText(paraData.function_tag, { x: 2.62, y: 0.12, w: 1.0, h: 0.3, fontSize: 9, bold: true, color: tag.text, align: 'center', valign: 'middle' })
+
+  // 페이지
+  slide.addText(`${paraNo} / ${totalParas}`, { x: 8.5, y: 0, w: 1.4, h: 0.55, fontSize: 10, color: 'A5B4FC', align: 'right', valign: 'middle' })
+
+  // 본문 텍스트 (전체 너비, 크게)
+  slide.addText(paraText, {
+    x: 0.5, y: 0.7, w: 9, h: 4.1,
+    fontSize: 17, fontFace: 'Malgun Gothic', color: C.BODY_TEXT,
+    lineSpacingMultiple: 1.75, valign: 'top',
+  })
+
+  // 핵심 문장 바 (하단)
+  const core = paraData.core_sentence ?? ''
+  if (core) {
+    slide.addShape('rect', { x: 0, y: 4.87, w: 10, h: 0.75, fill: { color: 'FEF9C3' }, line: { color: 'FCD34D' } })
+    slide.addShape('rect', { x: 0, y: 4.87, w: 0.18, h: 0.75, fill: { color: 'F59E0B' }, line: { color: 'F59E0B' } })
+    slide.addText([
+      { text: '★ 핵심  ', options: { bold: true, color: 'B45309', fontSize: 10 } },
+      { text: core.length > 80 ? core.slice(0, 80) + '…' : core, options: { color: '78350F', fontSize: 12, fontFace: 'Malgun Gothic' } },
+    ], { x: 0.28, y: 4.87, w: 9.5, h: 0.75, valign: 'middle' })
+  }
+}
+
+// ── 슬라이드 B: 단락 분석 ─────────────────────────────────────────────────────
+function addParaAnalysisSlide(
+  pres: PptxGenJS,
+  paraText: string,
+  paraData: Paragraph,
+  paraNo: number,
+  totalParas: number,
+  allParaData: Paragraph[],
   analysis: AnalysisResult,
 ) {
   const slide = pres.addSlide()
@@ -247,212 +297,142 @@ function addParagraphSlide(
   const tag = C.TAG[paraData.function_tag] ?? C.TAG.부연
   const relKey = paraData.relation_to_prev ?? (paraNo === 1 ? '도입' : '부연')
   const relColor = C.REL[relKey] ?? C.REL.부연
+  const prevPara = paraNo > 1 ? allParaData[paraNo - 2] : null
 
-  // ── 헤더 바 ──────────────────────────────────────────────────────────
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 0.58,
-    fill: { color: C.HEADER_BG },
-    line: { color: C.HEADER_BG },
-  })
-
-  // 단락 번호
-  slide.addText(`${paraNo}`, {
-    x: 0.25, y: 0, w: 0.35, h: 0.58,
-    fontSize: 18, bold: true, color: C.WHITE, align: 'center', valign: 'middle',
-  })
-
-  // 관계 태그
-  slide.addShape('rect', {
-    x: 0.65, y: 0.13, w: 0.9, h: 0.3,
-    fill: { color: relColor, transparency: 30 },
-    line: { color: relColor },
-    rectRadius: 0.08,
-  })
-  slide.addText(relKey, {
-    x: 0.65, y: 0.13, w: 0.9, h: 0.3,
-    fontSize: 8, bold: true, color: C.HEADER_BG, align: 'center', valign: 'middle',
-  })
-
-  // 기능 태그
-  slide.addShape('rect', {
-    x: 1.62, y: 0.13, w: 0.9, h: 0.3,
-    fill: { color: tag.bg, transparency: 30 },
-    line: { color: tag.bg },
-    rectRadius: 0.08,
-  })
-  slide.addText(paraData.function_tag, {
-    x: 1.62, y: 0.13, w: 0.9, h: 0.3,
-    fontSize: 8, bold: true, color: tag.bg === 'F5F5F4' ? '57534E' : tag.text, align: 'center', valign: 'middle',
-  })
-
-  // 페이지 정보
-  slide.addText(`${paraNo} / ${totalParas}`, {
-    x: 8.5, y: 0, w: 1.4, h: 0.58,
-    fontSize: 10, color: 'A5B4FC', align: 'right', valign: 'middle',
-  })
-
-  // ── 본문 텍스트 (좌측 넓은 영역) ──────────────────────────────────────
-  const mainW = 6.5
-  const mainX = 0.3
-
-  slide.addShape('rect', {
-    x: mainX, y: 0.7, w: mainW, h: 3.5,
-    fill: { color: C.WHITE },
-    line: { color: C.GRAY_BORDER },
-    shadow: makeShadow(),
-  })
-
-  // 본문 텍스트
-  slide.addText(paraText, {
-    x: mainX + 0.15, y: 0.78, w: mainW - 0.3, h: 3.35,
-    fontSize: 14.5,
-    fontFace: 'Malgun Gothic',
-    color: C.BODY_TEXT,
-    lineSpacingMultiple: 1.6,
-    valign: 'top',
-  })
-
-  // ── 핵심 문장 강조 바 ─────────────────────────────────────────────────
-  const coreText = paraData.core_sentence ?? ''
-  if (coreText) {
-    slide.addShape('rect', {
-      x: mainX, y: 4.27, w: mainW, h: 0.8,
-      fill: { color: 'FEF9C3' },
-      line: { color: 'FCD34D' },
-    })
-    slide.addShape('rect', {
-      x: mainX, y: 4.27, w: 0.12, h: 0.8,
-      fill: { color: 'F59E0B' },
-      line: { color: 'F59E0B' },
-    })
-    slide.addText('★ 핵심 문장', {
-      x: mainX + 0.18, y: 4.27, w: 1.2, h: 0.26,
-      fontSize: 7.5, bold: true, color: 'B45309', valign: 'middle',
-    })
-    const coreTrunc = coreText.length > 70 ? coreText.slice(0, 70) + '…' : coreText
-    slide.addText(coreTrunc, {
-      x: mainX + 0.18, y: 4.52, w: mainW - 0.3, h: 0.48,
-      fontSize: 10.5, color: '78350F', fontFace: 'Malgun Gothic', valign: 'top',
-    })
+  const NOTE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
+    yellow: { bg: 'FFFBEB', text: '92400E', bar: 'F59E0B' },
+    blue:   { bg: 'EFF6FF', text: '1E40AF', bar: '3B82F6' },
+    pink:   { bg: 'FDF2F8', text: '831843', bar: 'EC4899' },
+    green:  { bg: 'F0FDF4', text: '14532D', bar: '22C55E' },
   }
 
-  // ── 우측 사이드바 ──────────────────────────────────────────────────────
-  const sbX = mainX + mainW + 0.2
-  const sbW = 9.5 - sbX
-  let sbY = 0.7
+  // 헤더 (분석 슬라이드는 약간 다른 색으로 구분)
+  slide.addShape('rect', { x: 0, y: 0, w: 10, h: 0.55, fill: { color: '312E81' }, line: { color: '312E81' } })
+  slide.addText(`단락  ${paraNo}  분석`, { x: 0.3, y: 0, w: 3, h: 0.55, fontSize: 13, bold: true, color: C.WHITE, valign: 'middle' })
+  slide.addShape('rect', { x: 3.4, y: 0.12, w: 1.0, h: 0.3, fill: { color: relColor, transparency: 20 }, line: { color: relColor }, rectRadius: 0.06 })
+  slide.addText(relKey, { x: 3.4, y: 0.12, w: 1.0, h: 0.3, fontSize: 9, bold: true, color: '312E81', align: 'center', valign: 'middle' })
+  slide.addShape('rect', { x: 4.47, y: 0.12, w: 1.0, h: 0.3, fill: { color: tag.bg, transparency: 10 }, line: { color: tag.text }, rectRadius: 0.06 })
+  slide.addText(paraData.function_tag, { x: 4.47, y: 0.12, w: 1.0, h: 0.3, fontSize: 9, bold: true, color: tag.text, align: 'center', valign: 'middle' })
+  slide.addText(`${paraNo} / ${totalParas}`, { x: 8.5, y: 0, w: 1.4, h: 0.55, fontSize: 10, color: 'A5B4FC', align: 'right', valign: 'middle' })
 
-  // 키워드 카드
-  if (paraData.keywords?.length) {
-    slide.addShape('rect', {
-      x: sbX, y: sbY, w: sbW, h: 0.65,
-      fill: { color: 'EEF2FF' },
-      line: { color: 'A5B4FC' },
-      shadow: makeShadow(),
-    })
-    slide.addText('핵심 개념어', {
-      x: sbX + 0.1, y: sbY + 0.04, w: sbW - 0.2, h: 0.18,
-      fontSize: 7.5, bold: true, color: '4338CA',
-    })
-    slide.addText(paraData.keywords.join('\n'), {
-      x: sbX + 0.1, y: sbY + 0.23, w: sbW - 0.2, h: 0.38,
-      fontSize: 9, color: '3730A3', fontFace: 'Malgun Gothic',
-      lineSpacingMultiple: 1.3,
-    })
-    sbY += 0.75
-  }
+  // ── 좌측 컬럼 (5.6") ─────────────────────────────────────────────────
+  const LX = 0.3
+  const LW = 5.6
+  let LY = 0.68
 
-  // 단락 설명(summary)
-  if (paraData.summary) {
-    const summaryTrunc = paraData.summary.length > 120 ? paraData.summary.slice(0, 120) + '…' : paraData.summary
-    slide.addShape('rect', {
-      x: sbX, y: sbY, w: sbW, h: 1.6,
-      fill: { color: C.WHITE },
-      line: { color: C.GRAY_BORDER },
-      shadow: makeShadow(),
-    })
-    slide.addShape('rect', {
-      x: sbX, y: sbY, w: sbW, h: 0.24,
-      fill: { color: C.GRAY_LIGHT },
-      line: { color: C.GRAY_BORDER },
-    })
-    slide.addText('단락 설명', {
-      x: sbX + 0.1, y: sbY + 0.03, w: sbW - 0.2, h: 0.2,
-      fontSize: 7.5, bold: true, color: C.MUTED,
-    })
-    slide.addText(summaryTrunc, {
-      x: sbX + 0.1, y: sbY + 0.28, w: sbW - 0.2, h: 1.28,
-      fontSize: 8.5, color: C.BODY_TEXT, fontFace: 'Malgun Gothic',
-      lineSpacingMultiple: 1.5, valign: 'top',
-    })
-    sbY += 1.7
-  }
-
-  // 여백 메모
-  const notes = getParaMarginNotes(paraNo, analysis).slice(0, 2)
-  notes.forEach(note => {
-    const noteColors: Record<string, { bg: string; text: string; bar: string }> = {
-      yellow: { bg: 'FFFBEB', text: '92400E', bar: 'F59E0B' },
-      blue:   { bg: 'EFF6FF', text: '1E40AF', bar: '3B82F6' },
-      pink:   { bg: 'FDF2F8', text: '831843', bar: 'EC4899' },
-      green:  { bg: 'F0FDF4', text: '14532D', bar: '22C55E' },
+  // ① 앞 단락 연결 설명 (1단락 제외)
+  if (prevPara && paraNo > 1) {
+    const relDesc: Record<string, string> = {
+      부연: '앞 단락의 내용을 더 상세히 설명합니다.',
+      대조: '앞 단락과 반대되는 관점을 제시합니다.',
+      근거: '앞 단락의 주장을 뒷받침하는 논거입니다.',
+      예시: '앞 단락의 개념을 구체적 사례로 보여줍니다.',
+      결론: '앞 내용을 종합하여 최종 주장을 도출합니다.',
+      전환: '새로운 화제나 관점으로 전환합니다.',
     }
-    const nc = noteColors[note.color] ?? noteColors.yellow
-    const noteH = 0.75
-    if (sbY + noteH > 5.4) return  // 슬라이드 아래 넘치지 않게
+    const prevCore = prevPara.core_sentence ?? ''
+    const connH = prevCore ? 1.05 : 0.55
 
-    slide.addShape('rect', {
-      x: sbX, y: sbY, w: sbW, h: noteH,
-      fill: { color: nc.bg },
-      line: { color: nc.bar },
-      shadow: makeShadow(),
-    })
-    slide.addShape('rect', {
-      x: sbX, y: sbY, w: 0.1, h: noteH,
-      fill: { color: nc.bar },
-      line: { color: nc.bar },
-    })
-    const noteType = note.type ?? '일반'
-    slide.addText(noteType, {
-      x: sbX + 0.15, y: sbY + 0.04, w: sbW - 0.2, h: 0.18,
-      fontSize: 7, bold: true, color: nc.text,
-    })
-    const noteTrunc = note.content.length > 55 ? note.content.slice(0, 55) + '…' : note.content
-    slide.addText(noteTrunc, {
-      x: sbX + 0.15, y: sbY + 0.22, w: sbW - 0.2, h: 0.5,
-      fontSize: 8.5, color: nc.text, fontFace: 'Malgun Gothic',
-      lineSpacingMultiple: 1.3, valign: 'top',
-    })
-    sbY += noteH + 0.1
-  })
+    slide.addShape('rect', { x: LX, y: LY, w: LW, h: connH, fill: { color: 'F0F9FF' }, line: { color: '7DD3FC' }, shadow: makeShadow() })
+    slide.addShape('rect', { x: LX, y: LY, w: 0.12, h: connH, fill: { color: '0EA5E9' }, line: { color: '0EA5E9' } })
 
-  // 주석 태그들 (하단)
-  const anns = getParaAnnotations(paraText, analysis.annotations ?? [])
-  if (anns.length > 0 && sbY < 5.0) {
-    slide.addText('주요 주석', {
-      x: sbX, y: sbY, w: sbW, h: 0.18,
-      fontSize: 7, bold: true, color: C.MUTED,
+    slide.addText([
+      { text: `← 앞 단락(${paraNo - 1})과의 관계  `, options: { bold: true, color: '0369A1', fontSize: 9 } },
+      { text: relDesc[relKey] ?? `${relKey} 관계`, options: { color: '0369A1', fontSize: 9 } },
+    ], { x: LX + 0.2, y: LY + 0.06, w: LW - 0.3, h: 0.22, valign: 'middle' })
+
+    if (prevCore) {
+      slide.addText('앞 단락 핵심 → ', { x: LX + 0.2, y: LY + 0.3, w: 1.4, h: 0.18, fontSize: 8, color: '64748B', italic: true })
+      slide.addText(`"${prevCore.length > 55 ? prevCore.slice(0, 55) + '…' : prevCore}"`, {
+        x: LX + 0.2, y: LY + 0.48, w: LW - 0.35, h: 0.5,
+        fontSize: 10, color: '0C4A6E', fontFace: 'Malgun Gothic', italic: true,
+        lineSpacingMultiple: 1.4,
+      })
+    }
+    LY += connH + 0.12
+  }
+
+  // ② 단락 요약 (크게, 충분한 공간)
+  if (paraData.summary) {
+    const summaryH = Math.min(2.2, Math.max(1.4, (paraData.summary.length / 38) * 0.28 + 0.5))
+    slide.addShape('rect', { x: LX, y: LY, w: LW, h: summaryH, fill: { color: C.WHITE }, line: { color: C.GRAY_BORDER }, shadow: makeShadow() })
+    slide.addShape('rect', { x: LX, y: LY, w: LW, h: 0.3, fill: { color: '1E2761' }, line: { color: '1E2761' } })
+    slide.addText('📝  단락 요약', { x: LX + 0.15, y: LY, w: LW - 0.2, h: 0.3, fontSize: 9, bold: true, color: C.WHITE, valign: 'middle' })
+    slide.addText(paraData.summary, {
+      x: LX + 0.15, y: LY + 0.35, w: LW - 0.3, h: summaryH - 0.42,
+      fontSize: 11, color: C.BODY_TEXT, fontFace: 'Malgun Gothic',
+      lineSpacingMultiple: 1.6, valign: 'top',
     })
-    sbY += 0.2
+    LY += summaryH + 0.12
+  }
+
+  // ③ 핵심 키워드
+  if (paraData.keywords?.length && LY < 5.1) {
+    slide.addShape('rect', { x: LX, y: LY, w: LW, h: 0.4, fill: { color: 'EEF2FF' }, line: { color: 'A5B4FC' }, shadow: makeShadow() })
+    slide.addText([
+      { text: '핵심어  ', options: { bold: true, color: '4338CA', fontSize: 9 } },
+      { text: paraData.keywords.join('  ·  '), options: { color: '3730A3', fontSize: 10, fontFace: 'Malgun Gothic' } },
+    ], { x: LX + 0.15, y: LY, w: LW - 0.25, h: 0.4, valign: 'middle' })
+    LY += 0.5
+  }
+
+  // ── 우측 컬럼 (3.7") ─────────────────────────────────────────────────
+  const RX = LX + LW + 0.2
+  const RW = 9.7 - RX
+  let RY = 0.68
+
+  // ④ 주요 주석 (logic_role + 전체 text 표시)
+  const anns = getParaAnnotations(paraText, analysis.annotations ?? []).slice(0, 5)
+  if (anns.length > 0) {
+    slide.addShape('rect', { x: RX, y: RY, w: RW, h: 0.28, fill: { color: '1E2761' }, line: { color: '1E2761' } })
+    slide.addText('주요 주석', { x: RX + 0.1, y: RY, w: RW - 0.15, h: 0.28, fontSize: 9, bold: true, color: C.WHITE, valign: 'middle' })
+    RY += 0.28
+
     anns.forEach(ann => {
-      if (sbY > 5.3) return
+      if (RY > 4.8) return
       const symColor = C.SYM[ann.symbol] ?? '57534E'
-      const noteTrunc = ann.note?.length > 20 ? ann.note.slice(0, 20) + '…' : (ann.note ?? '')
-      slide.addShape('rect', {
-        x: sbX, y: sbY, w: sbW, h: 0.25,
-        fill: { color: C.GRAY_LIGHT },
-        line: { color: C.GRAY_BORDER },
-        rectRadius: 0.04,
-      })
+      const roleLabel = ann.logic_role ? `[${ann.logic_role}] ` : ''
+      const annText = ann.text.length > 42 ? ann.text.slice(0, 42) + '…' : ann.text
+      const noteText = ann.note ?? ''
+      const annH = 0.72
+
+      slide.addShape('rect', { x: RX, y: RY, w: RW, h: annH, fill: { color: C.WHITE }, line: { color: C.GRAY_BORDER }, shadow: makeShadow() })
+      slide.addShape('rect', { x: RX, y: RY, w: 0.1, h: annH, fill: { color: symColor }, line: { color: symColor } })
+
+      // 심볼 + 역할
       slide.addText([
-        { text: ann.symbol + ' ', options: { bold: true, color: symColor, fontSize: 9 } },
-        { text: noteTrunc, options: { color: C.BODY_TEXT, fontSize: 8 } },
-      ], {
-        x: sbX + 0.08, y: sbY, w: sbW - 0.12, h: 0.25,
-        valign: 'middle', fontFace: 'Malgun Gothic',
+        { text: ann.symbol + '  ', options: { bold: true, color: symColor, fontSize: 12 } },
+        { text: roleLabel, options: { bold: true, color: symColor, fontSize: 8 } },
+        { text: noteText, options: { color: C.MUTED, fontSize: 8, italic: true } },
+      ], { x: RX + 0.18, y: RY + 0.04, w: RW - 0.25, h: 0.22, valign: 'middle' })
+
+      // 주석 본문
+      slide.addText(`"${annText}"`, {
+        x: RX + 0.18, y: RY + 0.27, w: RW - 0.25, h: 0.42,
+        fontSize: 9.5, color: C.BODY_TEXT, fontFace: 'Malgun Gothic',
+        lineSpacingMultiple: 1.35, valign: 'top', italic: true,
       })
-      sbY += 0.28
+      RY += annH + 0.06
     })
   }
+
+  // ⑤ 여백 메모
+  const notes = getParaMarginNotes(paraNo, analysis)
+  notes.forEach(note => {
+    if (RY > 5.0) return
+    const nc = NOTE_COLORS[note.color] ?? NOTE_COLORS.yellow
+    const noteH = Math.min(1.0, Math.max(0.65, (note.content.length / 20) * 0.2 + 0.45))
+
+    slide.addShape('rect', { x: RX, y: RY, w: RW, h: noteH, fill: { color: nc.bg }, line: { color: nc.bar }, shadow: makeShadow() })
+    slide.addShape('rect', { x: RX, y: RY, w: 0.1, h: noteH, fill: { color: nc.bar }, line: { color: nc.bar } })
+    slide.addText(`${note.type ?? '메모'}`, { x: RX + 0.16, y: RY + 0.05, w: RW - 0.22, h: 0.2, fontSize: 8, bold: true, color: nc.text })
+    slide.addText(note.content, {
+      x: RX + 0.16, y: RY + 0.26, w: RW - 0.22, h: noteH - 0.3,
+      fontSize: 10, color: nc.text, fontFace: 'Malgun Gothic',
+      lineSpacingMultiple: 1.4, valign: 'top',
+    })
+    RY += noteH + 0.1
+  })
 }
 
 // ── 슬라이드: 비교대조 ─────────────────────────────────────────────────────────
@@ -715,7 +695,8 @@ export async function POST(req: Request) {
         keywords: [],
         relation_to_prev: i === 0 ? '도입' : '부연',
       }
-      addParagraphSlide(pres, paraText, pData as Paragraph, i + 1, paraTexts.length, analysisJson)
+      addParaTextSlide(pres, paraText, pData as Paragraph, i + 1, paraTexts.length)
+      addParaAnalysisSlide(pres, paraText, pData as Paragraph, i + 1, paraTexts.length, paraData as Paragraph[], analysisJson)
     })
 
     addCompareSlide(pres, analysisJson)
