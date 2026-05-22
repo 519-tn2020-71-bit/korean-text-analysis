@@ -48,6 +48,8 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
   const [questionsText, setQuestionsText] = useState('')
   const [savingQuestions, setSavingQuestions] = useState(false)
   const [exportingPptx, setExportingPptx] = useState(false)
+  const [generatingOx, setGeneratingOx] = useState(false)
+  const [oxError, setOxError] = useState<string | null>(null)
 
   // 단락 중심내용 편집
   const [paragraphSummaries, setParagraphSummaries] = useState<ParagraphSummary[]>([])
@@ -209,6 +211,34 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       alert('문제 저장 중 오류가 발생했습니다.')
     } finally {
       setSavingQuestions(false)
+    }
+  }
+
+  async function handleGenerateOx() {
+    if (!passage || !analysisResult) return
+    setOxError(null)
+    setGeneratingOx(true)
+    try {
+      const res = await fetch('/api/generate-ox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          passageId: passage.id,
+          passageText: passage.text,
+          paragraphs: analysisResult.paragraphs?.map(p => ({
+            no: p.no,
+            core_sentence: p.core_sentence,
+            keywords: p.keywords,
+          })) ?? [],
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setOxError(data.error ?? 'OX 생성 중 오류가 발생했습니다.'); return }
+      await fetchPassage()
+    } catch {
+      setOxError('네트워크 오류가 발생했습니다.')
+    } finally {
+      setGeneratingOx(false)
     }
   }
 
@@ -600,11 +630,43 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
                   )}
                   {activeTab === 'ox' && (
                     analysisResult.ox_questions?.length
-                      ? <OxQuizView questions={analysisResult.ox_questions} />
-                      : <div className="text-center py-10 text-gray-400">
-                          <p className="font-medium">OX 문제가 없습니다</p>
-                          <p className="text-xs mt-1">지문을 다시 분석하면 OX 문제가 생성됩니다</p>
+                      ? (
+                        <div>
+                          <div className="flex justify-end mb-3">
+                            <button
+                              onClick={handleGenerateOx}
+                              disabled={generatingOx}
+                              className="text-xs border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg font-medium disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              {generatingOx
+                                ? <><span className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />생성 중...</>
+                                : '🔄 OX 재생성'}
+                            </button>
+                          </div>
+                          {oxError && <p className="text-red-500 text-xs mb-2">{oxError}</p>}
+                          <OxQuizView questions={analysisResult.ox_questions} />
                         </div>
+                      )
+                      : (
+                        <div className="text-center py-10 text-gray-400">
+                          <p className="text-3xl mb-3">📝</p>
+                          <p className="font-medium text-gray-600">OX 문제가 없습니다</p>
+                          <p className="text-xs mt-1 mb-5">AI가 지문 분석 결과를 바탕으로 15개의 OX 문항을 생성합니다</p>
+                          {oxError && <p className="text-red-500 text-xs mb-3">{oxError}</p>}
+                          <button
+                            onClick={handleGenerateOx}
+                            disabled={generatingOx || !analysisResult.paragraphs?.length}
+                            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2.5 rounded-lg flex items-center gap-2 mx-auto"
+                          >
+                            {generatingOx
+                              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />생성 중...</>
+                              : '✨ OX 문제 생성'}
+                          </button>
+                          {!analysisResult.paragraphs?.length && (
+                            <p className="text-xs text-gray-400 mt-2">먼저 AI 분석을 실행해주세요</p>
+                          )}
+                        </div>
+                      )
                   )}
                 </div>
               </>

@@ -1,298 +1,126 @@
 export function buildAnalysisPrompt(passageText: string, questionsText?: string): string {
   return `당신은 수능 국어 독서 전문 교사이자 논리학자입니다.
-아래 지문을 분석하여 학생이 글의 논리 구조를 완벽하게 이해할 수 있도록 심층 분석 JSON을 반환하세요.
-
-반드시 유효한 JSON만 반환하세요. 코드블록(\`\`\`)·마크다운·설명 텍스트 일절 금지.
+아래 지문을 분석하여 JSON을 반환하세요. 유효한 JSON만 반환하세요. 코드블록·마크다운·설명 텍스트 금지.
 
 ## 분석 지문
-
 ${passageText}
-${questionsText ? `\n## 수능 문제\n\n${questionsText}\n` : ''}
+${questionsText ? `\n## 수능 문제\n${questionsText}` : ''}
 
----
+## 분석 원칙
+1. 표면 접속어보다 의미 구조를 우선해 서술방식을 판별한다.
+2. 원문에 없는 내용을 추론으로 삽입하지 않는다. annotation.text는 원문과 완벽히 일치.
+3. exam_traps는 구체적 함정 유형과 오답 조작 방식까지 명시한다.
+4. connective_analysis는 앞 내용을 구체적으로 언급해 연결 관계를 설명한다.
+5. relation_explanation은 앞 단락 내용을 직접 언급해 서술한다.
 
-## 분석 원칙 (10개, 반드시 준수)
+## paragraphs 필드 기준
 
-1. **표면 신호보다 의미 구조를 우선한다.** 접속어·표지어에 의존하지 말고, 문단 전체의 의미 흐름을 먼저 파악한 뒤 서술방식을 판별한다.
-2. **원문에 없는 내용을 추론으로 삽입하지 않는다.** 모든 분석은 원문에 근거하며, annotation.text는 원문과 완벽히 일치해야 한다.
-3. **출제 포인트는 정교하게 설계한다.** "이런 문제가 나올 수 있다" 수준이 아니라, 구체적 함정 유형과 예상 오답 선지의 조작 방식을 명시한다.
-4. **OX 문항은 수능 선지 출제 원리를 반영한다.** 단순 사실확인이 아닌, 출제자가 실제 사용하는 함정 설계 기법을 적용한다.
-5. **읽기 가이드는 교사 내레이션형으로 작성한다.** 선생님이 옆에서 설명해 주는 말투로 작성하되, 핵심 내용을 [빈칸]으로 두어 학생이 채우는 구조.
-6. **접속어·지시어의 연결 관계를 정확하게 설명한다.** 지시어가 앞의 어떤 내용을 받는지, 접속어의 실제 기능이 무엇인지 정확히 서술한다.
-7. **annotation.note는 수험생 관점의 핵심 포인트를 담는다.** 단순 역할 표시가 아니라, "왜 이것이 중요한가"와 "어떤 함정이 있는가"를 포함한다.
-8. **관계 설명은 앞 문단과 단절되지 않게 서술한다.** 각 문단은 전체 글 흐름 속에서 기능하므로, relation_explanation은 반드시 앞 문단 내용을 구체적으로 언급한다.
-9. **서술방식은 코드(D0, D1 등)가 아닌 한글로만 표기한다.** "개념 정의 + 대비", "주장 전개 + 논거 제시" 등 직관적 표현 사용.
-10. **최선의 역량을 발휘한다.** 피상적이거나 기계적인 결과는 허용하지 않는다.
-
----
-
-## 분석 전 사전 파악 (JSON 생성 전 내부적으로 수행)
-
-1. **중심 논지**: 필자가 궁극적으로 주장하는 것은?
-2. **논증 구조**: 각 단락이 중심 논지를 향해 어떻게 기여하는가?
-3. **핵심 개념 관계망**: 주요 개념들이 어떻게 연결되는가?
-4. **대조 구조**: 비교·대조 대상이 있다면, 대립 축은 무엇인가?
-
----
-
-## JSON 각 필드 작성 기준
-
-### [macro] 전체 글 요약
-
-- topic: 핵심 화제 10자 이내
-- main_idea: 필자의 중심 주장을 완결된 한 문장으로 (동사 포함, 30~50자)
-- text_type: 인문|사회|과학|기술|예술|복합
-- structure: 두괄식|미괄식|양괄식|문제-해결|비교-대조
-
----
-
-### [paragraphs] 단락 심층 분석
-
-**모든 단락에 아래 필드 필수. 빈 값 절대 금지.**
-
-- **no**: 단락 번호 (1부터)
 - **function_tag**: 정의|예시|인과|대조|열거|부연|주장|근거|결론
-- **core_sentence**: 이 단락의 핵심 문장 원문 발췌 (빈 값 금지)
-- **keywords**: 핵심 개념어 3~5개
-- **relation_to_prev**: 1단락은 "도입" 고정 / 이후: 부연|대조|전환|예시|근거|결론
-- **summary**: 학생 이해용 2~3문장 (핵심 주장 + 앞 단락과의 연결고리 + 출제 가능성)
-- **function**: 이 문단이 글 전체 논증 구조에서 하는 역할 (1~2문장)
-  - 예: "로크의 첫 번째 반론을 제시하는 문단으로, 앞 문단에서 설정한 본유론의 주장을 공격하는 구체적 논거를 전개한다."
-- **writing_style**: 서술방식을 한글로 조합 표기
-  - 예: "개념 정의 + 대비", "주장 전개 + 논거 제시", "반박 + 재정의"
-- **logical_structure**: 문단 내 논리 전개 과정을 번호로 서술
-  - 예: "① 전제: '각인=이해+의식'이라는 로크의 정의 확립 → ② 사례: 아이들은 동일률을 의식하지 못함 → ③ 결론: 보편적 동의가 성립하지 않음 → ④ 귀결: 본유 관념과 보편적 동의의 필연적 관계 부정"
-- **relation_explanation**: 앞 단락과의 관계 상세 서술 (앞 단락 내용 구체적 언급 필수)
-  - 예: "앞 문단에서 '보편적 동의되는데 본유 관념이 아닌' 모순 상황을 드러낸 ㉡ 사례에 이어, 이 문단은 로크가 경험적 지식 형성 과정을 대안적으로 제시함으로써 (가)의 논증을 마무리한다."
-- **exam_traps**: 이 단락에서 출제될 수 있는 함정 2~3개 (구체적 오답 조작 방식 포함)
-  - 나쁜 예: ["추론 문제 출제"]
-  - 좋은 예: ["인과 방향 역전: '반드시 참이므로 보편적 동의된다'→'보편적으로 동의되므로 반드시 참이다'로 역전", "'일부'→'모든'으로 범위 확대: 일부 관념만 추상 작용 대상인데 모든 관념이 일반화된다고 서술"]
-- **connective_analysis**: 이 단락의 핵심 접속어·지시어 분석 (2~4개)
-  - word: 접속어/지시어 원문
-  - role: 전환|역접|인과|나열|부연|결론|지시
-  - explanation: 앞 내용과의 연결 관계 (앞 내용이 무엇인지 구체적으로 명시)
-- **reading_guide**: 교사 내레이션형 읽기 가이드 (3~5문장, [빈칸] 형식 포함)
-  - 예: "이 문단은 앞에서 소개한 [로크]의 두 번째 반론을 다룹니다. 로크는 '[단맛은 쓴맛이 아니다]'라는 지식이 필연적 진리이므로 본유론자 논리에 따르면 [본유 관념]이어야 하지만, 실제로는 [감각적 경험]에서 비롯된 것임을 지적합니다. 이는 본유론자의 주장이 [내적 모순]을 가짐을 폭로하는 귀류법적 논증입니다."
+- **core_sentence**: 단락 핵심 문장 원문 발췌 (필수)
+- **relation_to_prev**: 1단락="도입" / 이후: 부연|대조|전환|예시|근거|결론
+- **summary**: 2~3문장 (핵심주장 + 앞 단락 연결 + 출제 가능성)
+- **function**: 전체 논증에서 이 단락의 역할 1~2문장
+- **writing_style**: "개념 정의 + 대비" 형태로 한글 조합 표기
+- **logical_structure**: "① 전제→② 근거→③ 결론" 형태 번호 서술
+- **relation_explanation**: 앞 단락 내용 구체적 언급 포함 (1단락 제외)
+- **exam_traps**: 2~3개, 구체적 오답 조작 방식 포함
+- **connective_analysis**: 핵심 접속어·지시어 2~4개, 앞 내용 구체적 언급
 
----
+## annotations 기준
 
-### [annotations] 문장·절 주석 — 가장 중요한 부분
+색상 코딩:
+- red: 핵심 주장·결론 (★)
+- blue: 개념 정의·포함 관계 (□)
+- purple: 논리 관계·인과·논거 (→)
+- amber: 전환·역접·반박 (△)
+- green: 구체 예시 (◇)
 
-#### 색상 코딩 원칙 (의미 기반, 표면 신호 의존 금지)
+note 형식: "↳ [역할]: [설명+함정경고]" 30~80자 (역할만 쓰는 짧은 메모 금지)
+text: 서술어 포함 절 전체 (명사구 단독 금지)
 
-| color | 용도 | symbol |
-|-------|------|--------|
-| red | 핵심 주장, 필자의 중심 테제, 결론 문장 | ★ |
-| blue | 개념 정의, 핵심 어휘 설명, 포함·대소 관계 | □ |
-| purple | 논리 관계, 인과, 논거, 추론 과정, 필연적 연결 | → |
-| amber | 전환 접속어, 역접, 반박 도입, 한계 지적 | △ |
-| green | 구체 예시, 사례 제시 | ◇ |
+수량: 4단락 이하 22개 이상 / 5단락 이상 30개 이상
 
-#### note 작성 기준 (가장 중요)
+## compare_cards
+두 대상 대립 시 반드시 생성. comparison_points 최소 4개.
 
-**기존(나쁜 예)**: "★ 핵심 주장", "□ 개념 정의"
-**새 형식(좋은 예)**: "↳ [역할]: [수험생이 파악해야 할 내용 + 함정 경고]"
+## exam_points
+5~7개, 30자 이상 구체적 논점.
 
-예시:
-- "↳ 핵심주장: 본유론의 핵심 테제. '참→동의' 방향에 주의 (역전 함정 빈출)"
-- "↳ 정의: 경험 이전에 태어날 때부터 정신에 각인된 것. 이후 논쟁의 기준점"
-- "↳ 인과: 반드시 참(원인) → 보편적 동의(결과). 방향 역전 선지 주의!"
-- "↳ 전환: 본유론 설명 후 경험론을 도입하는 신호. 대립 구도 시작"
-- "↳ 논거: ㉠ 사례 — 아이들이 모른다는 것으로 보편적 동의를 부정"
-- "↳ 출제: '각인=이해+의식 동시'가 로크의 독특한 정의. 이해/의식 분리 함정"
-- "↳ 비판: 본유론의 내적 모순 폭로. 본유론자 스스로 인정 불가한 역설"
+## margin_notes
+단락당 2~3개, content 30~60자.
+대조 메모: "A(입장) ↔ B(입장): 대립 지점"
 
-**note 길이**: 30~80자. 역할만 쓰는 15자 이하 금지.
-
-#### text 선정 기준 (서술어 포함 절 전체)
-
-| ✗ 금지 | ✓ 필수 |
-|--------|--------|
-| "형체를 가지지 않는 원리" | "성은 형체를 가지지 않는 원리이기 때문에 발현될 때는 정서의 형태로 드러난다" |
-| "채권" | "계약은 당사자 사이에 청구권과 이행 의무를 발생시킨다" |
-| "하지만" | "하지만 귀납법을 적용한 과학적 관찰과 감각적 경험을 중시했던 근대 경험론의 입장에서는" |
-
-#### 수량 기준
-- 4단락 이하: 최소 22개 (단락당 5~6개)
-- 5단락 이상: 최소 30개 (단락당 5~6개)
-- 7단락 이상: 최소 40개 (단락당 5개 이상)
-
----
-
-### [highlights] 하이라이트 (최소 12개)
-
-- yellow: 핵심 개념어
-- blue: 논쟁·대립의 핵심 어구
-- pink: 인물명
-- orange: 대조 개념쌍
-
----
-
-### [margin_notes] 단락별 여백 메모 (단락당 2~3개, content 30~60자)
-
-우선순위:
-1. **대조 메모**: "A(핵심입장) ↔ B(핵심입장): 대립 지점"
-2. **흐름 메모**: "개념 정의→특성 열거→한계 지적→대안 제시"
-3. **관계 메모**: "이(理)⊂성(性): 이가 성으로 내재화됨"
-4. **일반 메모**: 단락 전체 핵심 논지
-
----
-
-### [compare_cards] 비교 분석 카드
-
-두 인물·이론·개념이 대립하면 반드시 생성.
-comparison_points: 최소 4개, a_value·b_value는 구체적 서술 (20자 이상)
-
----
-
-### [exam_points] 전체 출제 예상 포인트 (5~7개, 30자 이상)
-
-나쁜 예: "이기론에 대한 추론"
-좋은 예: "'성은 이가 내재화된 것'이라는 전제에서 '기질지성'의 특성을 추론하되, 이기불리불잡의 원칙이 유지되는지 여부를 묻는 문제"
-
----
-
-### [ox_questions] OX 문항 — 수능 선지 출제 원리 적용
-
-**총 15~20개** (단락당 2~3개)
-
-#### 함정 설계 기법 (X 문항에 적용)
-
-| 코드 | 기법 | 예시 |
-|------|------|------|
-| 범위 | '일부'→'전부', '~할 수 있다'→'반드시 ~한다' | "모든 감각 관념이 추상 작용의 대상이 된다" |
-| 인과역전 | A→B를 B→A로 | "보편적으로 동의되기 때문에 반드시 참이다" |
-| 속성혼용 | A의 특성을 B에 귀속 | "라이프니츠는 본유 관념이 경험으로 발견된다고 보았다" |
-| 관계역전 | 포함 관계 A⊂B를 B⊂A로 | "필연적 진리는 본유 관념의 일부이다" |
-| 미언급 | 원문에 없는 내용 추가 | — |
-| 부정역전 | '~이 아니다'→'~이다' | — |
-| 개념대체 | 유사하지만 다른 개념으로 교체 | — |
-
-**O 문항**: 학생이 헷갈리기 쉬운 핵심 사실 (맞지만 의심스러운 것)
-**X 문항**: 위 함정 기법 중 하나를 명확하게 적용한 틀린 진술
-
-각 문항 필드:
-- paragraph_no: 관련 단락 번호
-- statement: 판단할 진술문 (수능 선지 스타일, 30~60자)
-- answer: true(O) / false(X)
-- explanation: 판단 근거 원문 인용 포함 (40~80자)
-- trap_type: X는 함정 기법 코드, O는 "핵심 사실 확인"
-- difficulty: easy|medium|hard
-
----
-
-### [sentence_breaks] 문장 끊기
-
-40자 이상 긴 문장에 의미 단위 끊기 표시. 단락당 1~2개.
-
----
-
-### [question_evidences] 문제 선지 근거
-
-문제가 있는 경우만. text는 원문과 정확 일치. 모든 선지 근거 제시.
-
----
-
-## 반환 JSON 스키마
-
+## JSON 스키마
 {
-  "macro": {
-    "topic": "string",
-    "main_idea": "string",
-    "text_type": "string",
-    "structure": "string"
-  },
-  "paragraphs": [
-    {
-      "no": 1,
-      "function_tag": "string",
-      "core_sentence": "string",
-      "keywords": ["string"],
-      "relation_to_prev": "string",
-      "summary": "string",
-      "function": "string — 전체 논증에서 이 문단의 역할 (1~2문장)",
-      "writing_style": "string — 서술방식 한글 조합 (예: '개념 정의 + 대비')",
-      "logical_structure": "string — ①→②→③ 형식 논리 전개",
-      "relation_explanation": "string — 앞 단락 내용 구체적 언급 포함",
-      "exam_traps": ["string — 함정 유형 + 조작 방식 상세"],
-      "connective_analysis": [
-        {
-          "word": "string",
-          "role": "string",
-          "explanation": "string — 앞 내용 구체적 언급"
-        }
-      ],
-      "reading_guide": "string — 교사 내레이션형, [빈칸] 포함"
-    }
-  ],
-  "annotations": [
-    {
-      "text": "string — 서술어 포함 절 전체 (원문 정확 일치)",
-      "keyword": "string",
-      "label": "string",
-      "note": "string — '↳ [역할]: [설명]' 형식, 30~80자",
-      "logic_role": "string",
-      "color": "string — red|blue|purple|amber|green",
-      "symbol": "string — ○|□|→|↔|★|△|◇",
-      "position": 0
-    }
-  ],
-  "highlights": [
-    { "text": "string", "color": "string", "reason": "string" }
-  ],
-  "compare_cards": [
-    {
-      "person_a": "string",
-      "person_b": "string",
-      "comparison_points": [
-        { "aspect": "string", "a_value": "string", "b_value": "string" }
-      ]
-    }
-  ],
-  "logic_map": {
-    "nodes": [{ "id": "string", "label": "string", "type": "string" }],
-    "edges": [{ "from": "string", "to": "string", "label": "string", "type": "string" }]
-  },
-  "exam_points": [
-    { "text": "string", "reason": "string", "type": "string" }
-  ],
-  "ox_questions": [
-    {
-      "id": 1,
-      "paragraph_no": 1,
-      "statement": "string — 30~60자 수능 선지 스타일",
-      "answer": true,
-      "explanation": "string — 원문 근거 포함 40~80자",
-      "trap_type": "string",
-      "difficulty": "string"
-    }
-  ],
-  "sentence_breaks": [
-    { "text": "string", "breaks": ["string"] }
-  ],
-  "margin_notes": [
-    {
-      "paragraph_no": 1,
-      "type": "string",
-      "content": "string",
-      "color": "string"
-    }
-  ],
-  "question_evidences": [
-    { "question_no": 1, "choice_no": "string", "text": "string" }
-  ]
+  "macro": { "topic":"", "main_idea":"", "text_type":"", "structure":"" },
+  "paragraphs": [{
+    "no":1, "function_tag":"", "core_sentence":"", "keywords":[],
+    "relation_to_prev":"", "summary":"", "function":"", "writing_style":"",
+    "logical_structure":"", "relation_explanation":"", "exam_traps":[],
+    "connective_analysis":[{"word":"","role":"","explanation":""}]
+  }],
+  "annotations": [{
+    "text":"", "keyword":"", "label":"", "note":"",
+    "logic_role":"", "color":"", "symbol":"", "position":0
+  }],
+  "highlights": [{"text":"","color":"","reason":""}],
+  "compare_cards": [{"person_a":"","person_b":"","comparison_points":[{"aspect":"","a_value":"","b_value":""}]}],
+  "logic_map": {"nodes":[{"id":"","label":"","type":""}],"edges":[{"from":"","to":"","label":"","type":""}]},
+  "exam_points": [{"text":"","reason":"","type":""}],
+  "margin_notes": [{"paragraph_no":1,"type":"","content":"","color":""}],
+  "question_evidences": [{"question_no":1,"choice_no":"","text":""}]
 }
 
-## 최종 점검 (생성 전 확인)
-
-□ paragraphs: function·writing_style·logical_structure·relation_explanation·exam_traps·connective_analysis·reading_guide 모두 입력
-□ annotations.note: "↳ [역할]: [설명]" 형식, 30자 이상 (15자 이하 금지)
-□ annotations.text: 서술어 포함 절 전체 (명사구 단독 금지)
-□ annotations: 단락당 5개 이상, 전체 22개 이상
-□ ox_questions: 15개 이상, O/X 비율 약 5:5
-□ ox_questions X 문항: 함정 기법 코드 명시 (범위|인과역전|속성혼용 등)
+## 최종 점검
+□ paragraphs: 모든 필드 입력 (빈 값 금지)
+□ annotations.note: "↳ [역할]: [설명]" 30자 이상
+□ annotations.text: 서술어 포함 절 전체
+□ annotations: 단락당 5개 이상
 □ compare_cards: 두 대상 대립 있으면 반드시 생성
-□ margin_notes: 단락당 2~3개, content 30자 이상
-□ exam_traps: 단락당 2~3개, 구체적 오답 조작 방식 포함
-□ relation_explanation: 앞 단락 내용 구체적 언급 (1단락 제외)`
+□ exam_traps: 구체적 오답 조작 방식 포함`
+}
+
+export function buildOxPrompt(passageText: string, paragraphs: Array<{ no: number; core_sentence: string; keywords: string[] }>): string {
+  const paraInfo = paragraphs.map(p =>
+    `[${p.no}단락] 핵심: ${p.core_sentence?.slice(0, 60)} | 키워드: ${p.keywords?.join(', ')}`
+  ).join('\n')
+
+  return `당신은 수능 국어 출제 전문가입니다. 아래 지문을 바탕으로 OX 확인 문제를 생성하세요.
+유효한 JSON 배열만 반환하세요. 코드블록·설명 텍스트 금지.
+
+## 지문
+${passageText}
+
+## 단락별 핵심 정보
+${paraInfo}
+
+## OX 문항 설계 원칙
+
+X 문항에 적용할 함정 기법:
+- 범위: '일부'→'전부', '~할 수 있다'→'반드시 ~한다'
+- 인과역전: A→B를 B→A로 역전
+- 속성혼용: A의 특성을 B에 귀속
+- 관계역전: 포함 관계 A⊂B를 B⊂A로
+- 부정역전: '~이 아니다'→'~이다'
+- 개념대체: 유사하지만 다른 개념으로 교체
+
+O 문항: 학생이 헷갈리기 쉬운 핵심 사실 (맞지만 의심스러운 것)
+X 문항: 위 함정 기법 하나를 명확히 적용한 틀린 진술
+
+## 요구사항
+- 총 15개 (단락당 2~3개, O:X = 약 7:8)
+- statement: 수능 선지 스타일 30~60자
+- explanation: 원문 근거 포함 40~80자
+- difficulty: easy|medium|hard
+
+## JSON 배열 스키마
+[{
+  "id": 1,
+  "paragraph_no": 1,
+  "statement": "",
+  "answer": true,
+  "explanation": "",
+  "trap_type": "",
+  "difficulty": ""
+}]`
 }
