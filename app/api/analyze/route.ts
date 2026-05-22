@@ -145,7 +145,7 @@ async function callProvider(provider: string, apiKey: string, prompt: string, us
         model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
-        max_tokens: 16384,
+        max_tokens: 9000,  // OpenRouter 키 한도 대응 (한도 올리면 16384로 복구)
       }),
     })
     if (!res.ok) {
