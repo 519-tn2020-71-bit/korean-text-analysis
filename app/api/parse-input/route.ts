@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     let responseText: string
     try {
       responseText = await callAIProvider(provider, apiKey, prompt, userData, {
-        maxOutputTokens: 4096,
+        maxOutputTokens: 1700,   // OpenRouter 키 한도 내로 제한 (한도 늘리면 4096으로 변경 권장)
         temperature: 0.1,
       })
     } catch (e) {
