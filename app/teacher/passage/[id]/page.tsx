@@ -11,12 +11,14 @@ import MarginNotes from '@/components/passage/MarginNotes'
 import SummaryPanel from '@/components/analysis/SummaryPanel'
 import InfographicView from '@/components/analysis/InfographicView'
 import CompareCardView from '@/components/analysis/CompareCard'
+import OxQuizView from '@/components/analysis/OxQuizView'
 
 const TABS = [
   { id: 'annotation', label: '지문분석' },
   { id: 'summary', label: '단락요약' },
   { id: 'infographic', label: '인포그래픽' },
   { id: 'compare', label: '비교분석' },
+  { id: 'ox', label: 'OX 문제' },
 ]
 
 const STAGE_LABELS = ['비공개', '1단계', '2단계', '3단계']
@@ -493,12 +495,20 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
                   )}
                   {activeTab === 'summary' && <SummaryPanel analysis={analysisResult} />}
                   {activeTab === 'infographic' && (
-                    <InfographicView analysis={analysisResult} />
+                    <InfographicView analysis={analysisResult} passageText={passage?.text} />
                   )}
                   {activeTab === 'compare' && (
                     analysisResult.compare_cards?.length > 0
                       ? <CompareCardView compareCards={analysisResult.compare_cards} />
                       : <div className="text-center py-10 text-gray-400">이 지문에는 비교 분석 대상이 없습니다</div>
+                  )}
+                  {activeTab === 'ox' && (
+                    analysisResult.ox_questions?.length
+                      ? <OxQuizView questions={analysisResult.ox_questions} />
+                      : <div className="text-center py-10 text-gray-400">
+                          <p className="font-medium">OX 문제가 없습니다</p>
+                          <p className="text-xs mt-1">지문을 다시 분석하면 OX 문제가 생성됩니다</p>
+                        </div>
                   )}
                 </div>
               </>

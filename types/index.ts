@@ -5,21 +5,35 @@ export interface Macro {
   structure: string
 }
 
+export interface ConnectiveItem {
+  word: string          // 접속어/지시어 원문
+  role: string          // 역할: 전환|역접|인과|나열|부연|결론|지시
+  explanation: string   // 앞 내용과의 연결 관계 상세 설명
+}
+
 export interface Paragraph {
   no: number
   function_tag: string
   core_sentence: string
   keywords: string[]
-  relation_to_prev?: string   // 이 단락이 앞 단락과 맺는 관계: 도입|전환|부연|대조|예시|근거|결론
-  summary?: string            // 단락 내용 상세 요약 (2~3문장, 학생 이해용)
+  relation_to_prev?: string        // 도입|전환|부연|대조|예시|근거|결론
+  summary?: string                 // 학생 이해용 2~3문장 요약
+  // 심층 분석 필드 (새로 추가)
+  function?: string                // 문단의 기능 (1~2문장, 전체 논증 구조에서의 역할)
+  writing_style?: string           // 서술방식 (예: "개념 정의 + 대비")
+  logical_structure?: string       // 논리 구조 (①전제→②근거→③결론 형식)
+  relation_explanation?: string    // 앞 단락과의 관계 상세 서술
+  exam_traps?: string[]            // 출제 포인트 (함정 유형 + 예상 오답 조작 방식)
+  connective_analysis?: ConnectiveItem[]  // 접속어/지시어 상세 분석
+  reading_guide?: string           // 교사 내레이션형 읽기 가이드 ([빈칸] 포함)
 }
 
 export interface Annotation {
   text: string      // 밑줄 그을 전체 절/구 (원문 일치)
-  keyword?: string  // 절 안에서 기호(○□★△)로 표시할 핵심어 (원문 일치, 짧은 단어/어구)
+  keyword?: string  // 절 안에서 기호(○□★△)로 표시할 핵심어
   label: string
-  note: string      // 15자 이내 초간단 메모 (예: "○ 이(理): 법칙·원리")
-  logic_role?: string  // 이 절이 논리 구조에서 하는 역할: 전제|근거|결론|반례|부연|대조|예시|정의
+  note: string      // "↳ [역할]: [설명]" 형식 (40~80자)
+  logic_role?: string  // 전제|근거|결론|반례|부연|대조|예시|정의
   color: 'blue' | 'red' | 'amber' | 'green' | 'purple'
   symbol: '○' | '□' | '→' | '↔' | '★' | '△' | '◇'
   position: number
@@ -80,6 +94,16 @@ export interface SentenceBreak {
   breaks: string[]
 }
 
+export interface OxQuestion {
+  id: number
+  paragraph_no: number
+  statement: string      // OX 판단할 진술문 (수능 선지 스타일)
+  answer: boolean        // true = O(맞다), false = X(틀리다)
+  explanation: string    // 판단 근거 (원문 인용 포함)
+  trap_type: string      // X 문항 함정 유형 / O 문항은 '핵심 사실 확인'
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
 export interface AnalysisResult {
   macro: Macro
   paragraphs: Paragraph[]
@@ -91,13 +115,14 @@ export interface AnalysisResult {
   sentence_breaks?: SentenceBreak[]
   margin_notes?: MarginNote[]
   question_evidences?: QuestionEvidence[]
+  ox_questions?: OxQuestion[]
   infographic_svg?: string
 }
 
 export interface QuestionEvidence {
-  question_no: number    // 1, 2, 3...
-  choice_no: string      // "①" "②" "③" "④" "⑤"
-  text: string           // exact passage text (원문 일치)
+  question_no: number
+  choice_no: string
+  text: string
 }
 
 export interface Passage {
