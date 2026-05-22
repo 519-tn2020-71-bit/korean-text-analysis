@@ -51,10 +51,15 @@ function splitParagraphs(text: string): string[] {
 }
 
 // ── 하이라이트 세그먼트 빌더 ─────────────────────────────────────────────────
+// 지문 내 하이라이트는 핵심 내용(red=핵심주장, blue=정의)만 표시
+const INLINE_HIGHLIGHT_COLORS = new Set(['red', 'blue'])
+
 interface Segment { text: string; ann: Annotation | null }
 
 function buildSegments(paraText: string, annotations: Annotation[]): Segment[] {
-  const relevant = annotations.filter(a => a.text && paraText.includes(a.text))
+  const relevant = annotations.filter(
+    a => a.text && paraText.includes(a.text) && INLINE_HIGHLIGHT_COLORS.has(a.color)
+  )
   const matches: Array<{ start: number; end: number; ann: Annotation }> = []
 
   for (const ann of relevant) {

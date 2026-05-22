@@ -125,6 +125,11 @@ export interface QuestionEvidence {
   text: string
 }
 
+export interface ParagraphSummary {
+  no: number
+  content: string  // 교사가 입력한 단락 중심내용 (1문장)
+}
+
 export interface Passage {
   id: string
   teacher_id: string
@@ -134,6 +139,9 @@ export interface Passage {
   year: number
   questions: string | null
   created_at: string
+  paragraph_summaries?: ParagraphSummary[] | null
+  content_summary?: string | null
+  explanations?: string | null
 }
 
 export interface TeacherAnalysis {

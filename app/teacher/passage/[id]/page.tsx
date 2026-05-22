@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import type { Passage, AnalysisResult, TeacherAnalysis, Annotation, MarginNote } from '@/types'
+import type { Passage, AnalysisResult, TeacherAnalysis, Annotation, MarginNote, ParagraphSummary } from '@/types'
 import TabBar from '@/components/shared/TabBar'
 import AnnotationLayer from '@/components/passage/AnnotationLayer'
 import AnnotationEditorPanel from '@/components/passage/AnnotationEditorPanel'
@@ -49,6 +49,11 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
   const [savingQuestions, setSavingQuestions] = useState(false)
   const [exportingPptx, setExportingPptx] = useState(false)
 
+  // 단락 중심내용 편집
+  const [paragraphSummaries, setParagraphSummaries] = useState<ParagraphSummary[]>([])
+  const [savingParaSummaries, setSavingParaSummaries] = useState(false)
+  const [paraSummaryDirty, setParaSummaryDirty] = useState(false)
+
   const supabase = createClient()
 
   useEffect(() => { fetchPassage() }, [id])
@@ -61,6 +66,12 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       setMarginNotes(analysis.analysis_json.margin_notes)
     }
   }, [analysis])
+
+  useEffect(() => {
+    if (passage?.paragraph_summaries?.length) {
+      setParagraphSummaries(passage.paragraph_summaries)
+    }
+  }, [passage])
 
   async function fetchPassage() {
     setLoading(true)
@@ -135,6 +146,20 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       alert('저장 중 오류가 발생했습니다.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleSaveParaSummaries() {
+    if (!passage) return
+    setSavingParaSummaries(true)
+    try {
+      const { error } = await supabase
+        .from('passages')
+        .update({ paragraph_summaries: paragraphSummaries.filter(p => p.content.trim()) })
+        .eq('id', passage.id)
+      if (!error) setParaSummaryDirty(false)
+    } finally {
+      setSavingParaSummaries(false)
     }
   }
 
@@ -493,7 +518,78 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
                       </div>
                     </div>
                   )}
-                  {activeTab === 'summary' && <SummaryPanel analysis={analysisResult} />}
+                  {activeTab === 'summary' && (
+                    <div className="space-y-4">
+                      {/* 단락 중심내용 편집 */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-700">문단별 중심내용</p>
+                            <p className="text-xs text-gray-400 mt-0.5">교사가 직접 입력·수정 가능</p>
+                          </div>
+                          <div className="flex gap-2 items-center">
+                            {paraSummaryDirty && (
+                              <button
+                                onClick={handleSaveParaSummaries}
+                                disabled={savingParaSummaries}
+                                className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50"
+                              >
+                                {savingParaSummaries ? '저장 중...' : '저장'}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                const nextNo = paragraphSummaries.length > 0
+                                  ? Math.max(...paragraphSummaries.map(p => p.no)) + 1
+                                  : 1
+                                setParagraphSummaries(prev => [...prev, { no: nextNo, content: '' }])
+                                setParaSummaryDirty(true)
+                              }}
+                              className="text-xs text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-50"
+                            >
+                              + 추가
+                            </button>
+                          </div>
+                        </div>
+
+                        {paragraphSummaries.length === 0 ? (
+                          <div className="text-center py-6 text-gray-400 text-xs">
+                            단락 중심내용이 없습니다. + 추가 버튼을 눌러 입력하세요.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {paragraphSummaries.sort((a, b) => a.no - b.no).map(para => (
+                              <div key={para.no} className="flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-black flex items-center justify-center shrink-0">
+                                  {para.no}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={para.content}
+                                  onChange={e => {
+                                    setParagraphSummaries(prev => prev.map(p => p.no === para.no ? { ...p, content: e.target.value } : p))
+                                    setParaSummaryDirty(true)
+                                  }}
+                                  placeholder={`${para.no}단락 중심내용...`}
+                                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                />
+                                <button
+                                  onClick={() => {
+                                    setParagraphSummaries(prev => prev.filter(p => p.no !== para.no))
+                                    setParaSummaryDirty(true)
+                                  }}
+                                  className="text-gray-300 hover:text-red-400 text-lg leading-none shrink-0"
+                                >×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* AI 생성 단락 요약 */}
+                      <SummaryPanel analysis={analysisResult} />
+                    </div>
+                  )}
                   {activeTab === 'infographic' && (
                     <InfographicView analysis={analysisResult} passageText={passage?.text} />
                   )}
