@@ -176,20 +176,28 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
     }
   }
 
-  async function handleExportHtml(type: 'analysis' | 'student' | 'teacher') {
+  async function handleExportHtml(type: 'analysis' | 'student' | 'teacher' | 'questions') {
     if (!passage || !analysisResult) return
     setExportingHtml(true)
     setShowExportMenu(false)
     try {
-      const isAnalysis = type === 'analysis'
-      const endpoint = isAnalysis ? '/api/export-html/analysis' : '/api/export-html/worksheet'
-      const body = isAnalysis
-        ? { passageId: passage.id, passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult }
-        : { passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult, mode: type }
-      const res = await fetch(endpoint, {
+      const endpointMap = {
+        analysis: '/api/export-html/analysis',
+        student: '/api/export-html/worksheet',
+        teacher: '/api/export-html/worksheet',
+        questions: '/api/export-html/questions',
+      }
+      const bodyMap = {
+        analysis: { passageId: passage.id, passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult },
+        student: { passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult, mode: 'student' },
+        teacher: { passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult, mode: 'teacher' },
+        questions: { passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult, questionsText: passage.questions ?? '' },
+      }
+      const suffixMap = { analysis: '원문분석', student: '학습지', teacher: '교사정답지', questions: '문항풀이' }
+      const res = await fetch(endpointMap[type], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(bodyMap[type]),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -200,8 +208,7 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      const suffix = type === 'analysis' ? '원문분석' : type === 'teacher' ? '교사정답지' : '학습지'
-      a.download = `${passage.title}_${suffix}.html`
+      a.download = `${passage.title}_${suffixMap[type]}.html`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -368,6 +375,12 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
                       className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >
                       🔍 지문분석 (교사용)
+                    </button>
+                    <button
+                      onClick={() => handleExportHtml('questions')}
+                      className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
+                    >
+                      📝 문항 풀이 (선지 근거)
                     </button>
                     <button
                       onClick={() => handleExportHtml('student')}

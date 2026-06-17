@@ -133,6 +133,12 @@ export const MOCK_ANALYSIS: AnalysisResult = {
     { id: 'm2', paragraph_no: 2, content: '결합 → 전기신호 (인과 순서!)', color: 'blue', type: '흐름' },
     { id: 'm3', paragraph_no: 3, content: '선택성 = 한 수용체 = 한 분자 구조', color: 'pink', type: '대조' },
   ],
+  question_evidences: [
+    { question_no: 1, choice_no: '①', text: '후각 수용체는 코 안쪽 점막에 위치한 단백질 분자이다' },
+    { question_no: 1, choice_no: '②', text: '냄새 분자가 수용체에 결합하면 세포 내부에서 전기 신호가 생성된다' },
+    { question_no: 2, choice_no: '①', text: '하나의 수용체는 특정 구조의 분자에만 반응하는 선택성을 가진다' },
+    { question_no: 2, choice_no: '③', text: '전기 신호가 생성된다' },
+  ],
   question_type_map: [
     { type: '내용일치', basis: '수용체 위치·속성 등 사실 정보가 명확해 일치 문항 출제 가능', paragraph_no: 1 },
     { type: '빈칸추론', basis: '인과 관계의 결과어(전기 신호)를 빈칸으로 처리하면 고난도 문항 성립', paragraph_no: 2 },
