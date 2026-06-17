@@ -46,9 +46,10 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
   const [editingQuestions, setEditingQuestions] = useState(false)
   const [questionsText, setQuestionsText] = useState('')
   const [savingQuestions, setSavingQuestions] = useState(false)
-  const [exportingPptx, setExportingPptx] = useState(false)
   const [generatingOx, setGeneratingOx] = useState(false)
   const [oxError, setOxError] = useState<string | null>(null)
+  const [exportingHtml, setExportingHtml] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   // 단락 중심내용 편집
   const [paragraphSummaries, setParagraphSummaries] = useState<ParagraphSummary[]>([])
@@ -147,38 +148,38 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
     }
   }
 
-  async function handleExportPptx() {
+  async function handleExportHtml(type: 'analysis' | 'student' | 'teacher') {
     if (!passage || !analysisResult) return
-    setExportingPptx(true)
+    setExportingHtml(true)
+    setShowExportMenu(false)
     try {
-      const res = await fetch('/api/export-pptx', {
+      const isAnalysis = type === 'analysis'
+      const endpoint = isAnalysis ? '/api/export-html/analysis' : '/api/export-html/worksheet'
+      const body = isAnalysis
+        ? { passageId: passage.id, passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult }
+        : { passageTitle: passage.title, passageSubject: passage.subject, passageYear: passage.year, passageText: passage.text, analysisJson: analysisResult, mode: type }
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          passageTitle: passage.title,
-          passageYear: passage.year,
-          passageSubject: passage.subject,
-          passageText: passage.text,
-          questionsText: passage.questions ?? '',
-          analysisJson: analysisResult,
-        }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error ?? 'PPT 생성 실패')
+        alert(err.error ?? 'HTML 생성 실패')
         return
       }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${passage.title}.pptx`
+      const suffix = type === 'analysis' ? '원문분석' : type === 'teacher' ? '교사정답지' : '학습지'
+      a.download = `${passage.title}_${suffix}.html`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert('PPT 내보내기 중 오류가 발생했습니다.')
+      alert('HTML 내보내기 중 오류가 발생했습니다.')
     } finally {
-      setExportingPptx(false)
+      setExportingHtml(false)
     }
   }
 
@@ -320,17 +321,41 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
               </button>
             )}
 
-            {/* PPT 내보내기 */}
+            {/* HTML 내보내기 드롭다운 */}
             {analysisResult && (
-              <button
-                onClick={handleExportPptx}
-                disabled={exportingPptx}
-                className="border border-orange-300 hover:bg-orange-50 text-orange-600 text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50"
-              >
-                {exportingPptx
-                  ? <><span className="w-3 h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin" />생성 중...</>
-                  : '📊 PPT 내보내기'}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu(m => !m)}
+                  disabled={exportingHtml}
+                  className="border border-emerald-300 hover:bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50"
+                >
+                  {exportingHtml
+                    ? <><span className="w-3 h-3 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" />생성 중...</>
+                    : <>📄 HTML 내보내기 ▾</>}
+                </button>
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-30 min-w-[160px] overflow-hidden">
+                    <button
+                      onClick={() => handleExportHtml('analysis')}
+                      className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      🔍 지문분석 (교사용)
+                    </button>
+                    <button
+                      onClick={() => handleExportHtml('student')}
+                      className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
+                    >
+                      📋 학습지 (학생용)
+                    </button>
+                    <button
+                      onClick={() => handleExportHtml('teacher')}
+                      className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
+                    >
+                      📋 학습지 (교사 정답지)
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* AI analyze */}
