@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Passage, AnalysisResult, TeacherAnalysis, Annotation, MarginNote, ParagraphSummary } from '@/types'
 import TabBar from '@/components/shared/TabBar'
+import { MOCK_ANALYSIS } from '@/lib/mock/analysisResult'
 import AnnotationLayer from '@/components/passage/AnnotationLayer'
 import AnnotationEditorPanel from '@/components/passage/AnnotationEditorPanel'
 import MarginNotes from '@/components/passage/MarginNotes'
@@ -92,6 +93,19 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       setError('데이터를 불러오는 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleMockAnalyze() {
+    if (!passage) return
+    const { error } = await supabase.from('teacher_analyses').upsert({
+      passage_id: passage.id,
+      analysis_json: MOCK_ANALYSIS,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'passage_id' })
+    if (!error) {
+      await fetchPassage()
+      setIsDirty(false)
     }
   }
 
@@ -358,6 +372,15 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
                 )}
               </div>
             )}
+
+            {/* 테스트용 목 데이터 */}
+            <button
+              onClick={handleMockAnalyze}
+              className="border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 text-xs px-2 py-1.5 rounded-lg"
+              title="API 호출 없이 샘플 분석 데이터 삽입"
+            >
+              🧪 테스트
+            </button>
 
             {/* AI analyze */}
             {!analysisResult ? (
