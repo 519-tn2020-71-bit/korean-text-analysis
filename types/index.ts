@@ -11,21 +11,47 @@ export interface ConnectiveItem {
   explanation: string   // 앞 내용과의 연결 관계 상세 설명
 }
 
+export interface ReadingBarrier {
+  type: '수식어구' | '생소개념' | '추상표현' | '인과관계' | '지시어'
+  text: string   // 해당 원문 텍스트
+  tip: string    // 교사 설명 팁
+}
+
+export interface VocabItem {
+  word: string
+  level: 'high' | 'medium'
+  meaning: string
+}
+
+export interface QuestionTypeEntry {
+  type: '빈칸추론' | '순서배열' | '주제요지' | '문단삽입' | '글의목적' | '지칭추론' | '내용일치'
+  basis: string
+  paragraph_no?: number
+}
+
+export interface DifficultyScore {
+  overall: number
+  predicted_pass_rate: string
+  grade_estimate: string
+  factors: string[]
+}
+
 export interface Paragraph {
   no: number
   function_tag: string
   core_sentence: string
   keywords: string[]
-  relation_to_prev?: string        // 도입|전환|부연|대조|예시|근거|결론
-  summary?: string                 // 학생 이해용 2~3문장 요약
-  // 심층 분석 필드 (새로 추가)
-  function?: string                // 문단의 기능 (1~2문장, 전체 논증 구조에서의 역할)
-  writing_style?: string           // 서술방식 (예: "개념 정의 + 대비")
-  logical_structure?: string       // 논리 구조 (①전제→②근거→③결론 형식)
-  relation_explanation?: string    // 앞 단락과의 관계 상세 서술
-  exam_traps?: string[]            // 출제 포인트 (함정 유형 + 예상 오답 조작 방식)
-  connective_analysis?: ConnectiveItem[]  // 접속어/지시어 상세 분석
-  reading_guide?: string           // 교사 내레이션형 읽기 가이드 ([빈칸] 포함)
+  relation_to_prev?: string
+  summary?: string
+  function?: string
+  writing_style?: string
+  logical_structure?: string
+  relation_explanation?: string
+  exam_traps?: string[]
+  connective_analysis?: ConnectiveItem[]
+  reading_guide?: string
+  reading_barriers?: ReadingBarrier[]
+  vocab_items?: VocabItem[]
 }
 
 export interface Annotation {
@@ -117,6 +143,8 @@ export interface AnalysisResult {
   question_evidences?: QuestionEvidence[]
   ox_questions?: OxQuestion[]
   infographic_svg?: string
+  question_type_map?: QuestionTypeEntry[]
+  difficulty_score?: DifficultyScore
 }
 
 export interface QuestionEvidence {

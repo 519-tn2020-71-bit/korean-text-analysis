@@ -16,6 +16,7 @@ import OxQuizView from '@/components/analysis/OxQuizView'
 const TABS = [
   { id: 'annotation', label: '지문분석' },
   { id: 'summary', label: '단락요약' },
+  { id: 'deep', label: '심층분석' },
   { id: 'infographic', label: '인포그래픽' },
   { id: 'compare', label: '비교분석' },
   { id: 'ox', label: 'OX 문제' },
@@ -604,6 +605,98 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
 
                       {/* AI 생성 단락 요약 */}
                       <SummaryPanel analysis={analysisResult} />
+                    </div>
+                  )}
+                  {activeTab === 'deep' && (
+                    <div className="space-y-5">
+                      {/* 난이도 */}
+                      {analysisResult.difficulty_score && (
+                        <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white rounded-xl p-4">
+                          <p className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">지문 난이도</p>
+                          <div className="flex items-end gap-4 mb-3">
+                            <div>
+                              <p className="text-4xl font-black">{analysisResult.difficulty_score.overall}<span className="text-lg font-normal text-slate-400">/5</span></p>
+                              <p className="text-xs text-slate-400 mt-0.5">종합 난이도</p>
+                            </div>
+                            <div>
+                              <p className="text-xl font-bold text-amber-400">{analysisResult.difficulty_score.predicted_pass_rate}</p>
+                              <p className="text-xs text-slate-400">예상 정답률</p>
+                            </div>
+                            <div>
+                              <p className="text-xl font-bold text-sky-400">{analysisResult.difficulty_score.grade_estimate}</p>
+                              <p className="text-xs text-slate-400">예상 등급</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {analysisResult.difficulty_score.factors.map((f, i) => (
+                              <span key={i} className="text-xs bg-white/10 text-slate-200 px-2 py-0.5 rounded-full">{f}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 예상 출제 유형 */}
+                      {analysisResult.question_type_map?.length ? (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">예상 출제 유형</p>
+                          <div className="space-y-2">
+                            {analysisResult.question_type_map.map((q, i) => (
+                              <div key={i} className="flex gap-3 items-start p-3 bg-violet-50 border border-violet-100 rounded-xl">
+                                <span className="shrink-0 text-xs font-bold bg-violet-600 text-white px-2 py-0.5 rounded-full mt-0.5">{q.type}</span>
+                                <div>
+                                  <p className="text-xs text-gray-700">{q.basis}</p>
+                                  {q.paragraph_no && <p className="text-xs text-gray-400 mt-0.5">{q.paragraph_no}단락</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {/* 문단별 독해 장벽 + 어휘 */}
+                      {analysisResult.paragraphs?.map(para => {
+                        const hasBarriers = para.reading_barriers?.length
+                        const hasVocab = para.vocab_items?.length
+                        if (!hasBarriers && !hasVocab) return null
+                        return (
+                          <div key={para.no} className="border border-gray-200 rounded-xl overflow-hidden">
+                            <div className="bg-gray-800 text-white text-xs font-bold px-3 py-2">
+                              {para.no}단락 — {para.function_tag}
+                            </div>
+                            <div className="p-3 space-y-3">
+                              {hasBarriers ? (
+                                <div>
+                                  <p className="text-xs font-semibold text-rose-600 mb-1.5">⚡ 독해 장벽</p>
+                                  <div className="space-y-2">
+                                    {para.reading_barriers!.map((b, i) => (
+                                      <div key={i} className="bg-rose-50 border border-rose-100 rounded-lg p-2.5">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                          <span className="text-xs font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">{b.type}</span>
+                                          <span className="text-xs text-gray-600 font-mono">"{b.text}"</span>
+                                        </div>
+                                        <p className="text-xs text-gray-700">💡 {b.tip}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
+                              {hasVocab ? (
+                                <div>
+                                  <p className="text-xs font-semibold text-sky-600 mb-1.5">📖 어휘</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {para.vocab_items!.map((v, i) => (
+                                      <div key={i} className={`text-xs px-2 py-1 rounded-lg border ${v.level === 'high' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-sky-50 border-sky-200 text-sky-800'}`}>
+                                        <span className="font-bold">{v.word}</span>
+                                        <span className="text-gray-500 ml-1">— {v.meaning}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                   {activeTab === 'infographic' && (

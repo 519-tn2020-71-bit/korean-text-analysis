@@ -26,6 +26,8 @@ ${questionsText ? `\n## 수능 문제\n${questionsText}` : ''}
 - **exam_traps**: 2~3개, 구체적 오답 조작 방식 포함
 - **connective_analysis**: 핵심 접속어·지시어 2~4개, 앞 내용 구체적 언급
 - **reading_guide**: 교사 나레이션체 2~4문장. 구어체. 핵심어 밑줄/표시 지시·접속어 기능 설명 포함. 빈칸 정답어는 【정답어】 표기. 예: "자, 이 문단에서 '후각 수용체'에 밑줄을 그으세요. 이것은 냄새 분자를 【전기 신호】로 전환하는 매개체예요. '이후'는 시간 순서 신호이니 주목해 두세요."
+- **reading_barriers**: 이 단락에서 학생이 막힐 지점 1~3개. type은 수식어구|생소개념|추상표현|인과관계|지시어 중 하나. text는 해당 원문 발췌. tip은 교사가 수업에서 바로 쓸 수 있는 설명 1문장.
+- **vocab_items**: 이 단락의 고/중난도 어휘 1~4개. level은 high|medium. meaning은 문맥 속 의미 (15자 이내).
 
 ## annotations 기준
 
@@ -47,6 +49,12 @@ text: 서술어 포함 절 전체 (명사구 단독 금지)
 ## exam_points
 5~7개, 30자 이상 구체적 논점.
 
+## question_type_map
+이 지문에서 출제 가능한 수능 문제 유형 3~5개. type: 빈칸추론|순서배열|주제요지|문단삽입|글의목적|지칭추론|내용일치. basis: 왜 이 유형이 출제 가능한지 근거 1문장. paragraph_no: 가장 관련 깊은 단락 번호 (없으면 생략).
+
+## difficulty_score
+overall: 1(쉬움)~5(최고난도) 정수. predicted_pass_rate: 수능 기준 예상 정답률 (예: "40~50%"). grade_estimate: 예상 등급 (예: "2~3등급"). factors: 고난도 요인 2~3개 (어휘·구조·개념 중심).
+
 ## margin_notes
 단락당 2~3개, content 30~60자.
 대조 메모: "A(입장) ↔ B(입장): 대립 지점"
@@ -59,7 +67,9 @@ text: 서술어 포함 절 전체 (명사구 단독 금지)
     "relation_to_prev":"", "summary":"", "function":"", "writing_style":"",
     "logical_structure":"", "relation_explanation":"", "exam_traps":[],
     "connective_analysis":[{"word":"","role":"","explanation":""}],
-    "reading_guide":""
+    "reading_guide":"",
+    "reading_barriers":[{"type":"","text":"","tip":""}],
+    "vocab_items":[{"word":"","level":"","meaning":""}]
   }],
   "annotations": [{
     "text":"", "keyword":"", "label":"", "note":"",
@@ -70,7 +80,9 @@ text: 서술어 포함 절 전체 (명사구 단독 금지)
   "logic_map": {"nodes":[{"id":"","label":"","type":""}],"edges":[{"from":"","to":"","label":"","type":""}]},
   "exam_points": [{"text":"","reason":"","type":""}],
   "margin_notes": [{"paragraph_no":1,"type":"","content":"","color":""}],
-  "question_evidences": [{"question_no":1,"choice_no":"","text":""}]
+  "question_evidences": [{"question_no":1,"choice_no":"","text":""}],
+  "question_type_map": [{"type":"","basis":"","paragraph_no":1}],
+  "difficulty_score": {"overall":3,"predicted_pass_rate":"","grade_estimate":"","factors":[]}
 }
 
 ## 최종 점검

@@ -34,6 +34,10 @@ ${analysisCss()}
 
 ${coverHtml(p.title, coverBadge, p.year, keywords, p.analysis.macro?.main_idea)}
 
+${difficultyCardHtml(p.analysis)}
+
+${questionTypeMapHtml(p.analysis)}
+
 ${compareTableHtml(p.analysis)}
 
 ${passageBlockHtml(p.passageText)}
@@ -55,6 +59,37 @@ function coverHtml(title: string, badge: string, year: number, keywords: string[
   <div class="cover-subtitle">${esc(String(year))}학년도</div>
   ${mainIdea ? `<p class="cover-idea">${esc(mainIdea)}</p>` : ''}
   <div class="cover-tags">${tags}</div>
+</div>`
+}
+
+function difficultyCardHtml(analysis: AnalysisResult): string {
+  const d = analysis.difficulty_score
+  if (!d) return ''
+  const stars = '●'.repeat(d.overall) + '○'.repeat(5 - d.overall)
+  const factorChips = (d.factors ?? []).map(f => `<span class="diff-factor">${esc(f)}</span>`).join('')
+  return `<div class="diff-card">
+  <div class="diff-title">지문 난이도</div>
+  <div class="diff-row">
+    <div class="diff-stars">${stars}</div>
+    <div class="diff-stat"><span class="diff-val">${esc(d.predicted_pass_rate)}</span><span class="diff-key">예상 정답률</span></div>
+    <div class="diff-stat"><span class="diff-val">${esc(d.grade_estimate)}</span><span class="diff-key">예상 등급</span></div>
+  </div>
+  <div class="diff-factors">${factorChips}</div>
+</div>`
+}
+
+function questionTypeMapHtml(analysis: AnalysisResult): string {
+  if (!analysis.question_type_map?.length) return ''
+  const rows = analysis.question_type_map.map(q =>
+    `<div class="qtype-row">
+  <span class="qtype-badge">${esc(q.type)}</span>
+  <span class="qtype-basis">${esc(q.basis)}</span>
+  ${q.paragraph_no ? `<span class="qtype-para">${q.paragraph_no}단락</span>` : ''}
+</div>`
+  ).join('')
+  return `<div class="qtype-section">
+  <h2 class="section-title">🎯 예상 출제 유형</h2>
+  ${rows}
 </div>`
 }
 
@@ -94,6 +129,12 @@ function analysisBlocksHtml(analysis: AnalysisResult, paraTexts: string[]): stri
     const trapItems = (para.exam_traps ?? []).map(t =>
       `<li class="trap-item"><span class="trap-icon">⚠</span> ${esc(t)}</li>`
     ).join('')
+    const barrierItems = (para.reading_barriers ?? []).map(b =>
+      `<li class="barrier-item"><span class="barrier-type">${esc(b.type)}</span><span class="barrier-text">"${esc(b.text)}"</span><span class="barrier-tip">💡 ${esc(b.tip)}</span></li>`
+    ).join('')
+    const vocabItems = (para.vocab_items ?? []).map(v =>
+      `<span class="vocab-chip vocab-${v.level}">${esc(v.word)} <span class="vocab-meaning">— ${esc(v.meaning)}</span></span>`
+    ).join('')
 
     return `<div class="analysis-block">
   <div class="block-label analysis-label">해설 — 문단 ${para.no}</div>
@@ -106,6 +147,8 @@ function analysisBlocksHtml(analysis: AnalysisResult, paraTexts: string[]): stri
     ${connectiveRows ? `<p class="field-label">접속어·지시어</p><ul class="conn-list">${connectiveRows}</ul>` : ''}
     ${para.core_sentence ? `<p class="core-sentence"><span class="field-label">핵심 문장</span>"${esc(para.core_sentence)}"</p>` : ''}
     ${trapItems ? `<p class="field-label trap-label">출제 포인트</p><ul class="trap-list">${trapItems}</ul>` : ''}
+    ${barrierItems ? `<p class="field-label barrier-label">독해 장벽</p><ul class="barrier-list">${barrierItems}</ul>` : ''}
+    ${vocabItems ? `<p class="field-label vocab-label">어휘</p><div class="vocab-row">${vocabItems}</div>` : ''}
   </div>
 </div>
 ${i < (analysis.paragraphs?.length ?? 0) - 1 ? '<hr class="section-divider">' : ''}`
@@ -226,6 +269,43 @@ body {
 .comp-table td { padding: 5px 8px; border: 1px solid #ccc; }
 .comp-aspect { font-weight: 600; background: #f8f9fa; }
 .comp-table tr:nth-child(even) td { background: #f5f5f5; }
+
+/* 독해 장벽 */
+.barrier-label.field-label { background: #b71c1c; }
+.barrier-list { list-style: none; margin: 4px 0 0 8px; }
+.barrier-item { font-size: 8.5pt; margin-bottom: 6px; }
+.barrier-type { display: inline-block; font-size: 7.5pt; font-weight: 700; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 0 5px; border-radius: 3px; margin-right: 5px; }
+.barrier-text { font-family: 'Noto Serif KR', serif; color: #555; margin-right: 6px; }
+.barrier-tip { color: #555; font-size: 8pt; display: block; margin-top: 2px; padding-left: 2px; }
+
+/* 어휘 */
+.vocab-label.field-label { background: #0277bd; }
+.vocab-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.vocab-chip { font-size: 8pt; padding: 2px 7px; border-radius: 4px; border: 1px solid; }
+.vocab-high { background: #fff8e1; border-color: #ffd54f; color: #5d4037; }
+.vocab-medium { background: #e3f2fd; border-color: #90caf9; color: #0d47a1; }
+.vocab-meaning { font-size: 7.5pt; color: #888; }
+
+/* 난이도 카드 */
+.diff-card {
+  background: #1a1a1a; color: #fff;
+  padding: 16px 20px; border-radius: 6px; margin-bottom: 20px;
+}
+.diff-title { font-size: 8pt; color: #888; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
+.diff-row { display: flex; align-items: center; gap: 24px; margin-bottom: 10px; }
+.diff-stars { font-size: 14pt; color: #4caf50; letter-spacing: 2px; }
+.diff-stat { display: flex; flex-direction: column; }
+.diff-val { font-size: 14pt; font-weight: bold; color: #fff; }
+.diff-key { font-size: 7.5pt; color: #888; margin-top: 1px; }
+.diff-factors { display: flex; flex-wrap: wrap; gap: 6px; }
+.diff-factor { font-size: 8pt; background: rgba(255,255,255,0.1); color: #ccc; padding: 2px 8px; border-radius: 10px; }
+
+/* 예상 출제 유형 */
+.qtype-section { margin-bottom: 20px; }
+.qtype-row { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 9pt; }
+.qtype-badge { flex-shrink: 0; font-size: 8pt; font-weight: 700; background: #6a1b9a; color: #fff; padding: 1px 8px; border-radius: 10px; }
+.qtype-basis { color: #333; flex: 1; }
+.qtype-para { flex-shrink: 0; font-size: 8pt; color: #999; }
 
 /* 구분선 */
 .section-divider { border: none; border-top: 1px solid #ddd; margin: 12px 0; }
