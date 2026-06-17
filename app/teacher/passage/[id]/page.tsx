@@ -30,7 +30,6 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
   const [activeTab, setActiveTab] = useState('annotation')
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
-  const [stageLoading, setStageLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
@@ -112,23 +111,6 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       setAnalyzeError('네트워크 오류가 발생했습니다.')
     } finally {
       setAnalyzing(false)
-    }
-  }
-
-  async function handleStageChange(newStage: number) {
-    if (!analysis) return
-    setStageLoading(true)
-    try {
-      const { error: updateError } = await supabase
-        .from('teacher_analyses')
-        .update({ stage_released: newStage })
-        .eq('id', analysis.id)
-      if (updateError) throw updateError
-      setAnalysis({ ...analysis, stage_released: newStage as 0 | 1 | 2 | 3 })
-    } catch {
-      alert('단계 변경 중 오류가 발생했습니다.')
-    } finally {
-      setStageLoading(false)
     }
   }
 
@@ -293,27 +275,6 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Stage control */}
-            {analysis && (
-              <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg p-1">
-                <span className="text-xs text-gray-400 px-1">공개</span>
-                {[0, 1, 2, 3].map(stage => (
-                  <button
-                    key={stage}
-                    onClick={() => handleStageChange(stage)}
-                    disabled={stageLoading || analysis.stage_released === stage}
-                    className={`text-xs px-2 py-1 rounded font-medium transition-all ${
-                      analysis.stage_released === stage
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-gray-500 hover:bg-gray-100'
-                    } disabled:opacity-50`}
-                  >
-                    {stage === 0 ? '잠금' : `${stage}단계`}
-                  </button>
-                ))}
-              </div>
-            )}
-
             {/* Sentence break toggle */}
             {analysisResult?.sentence_breaks?.length && (
               <button

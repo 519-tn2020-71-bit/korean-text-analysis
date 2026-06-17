@@ -5,14 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-type Role = 'teacher' | 'student'
-
 export default function SignupPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [role, setRole] = useState<Role>('teacher')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -38,7 +35,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
-          data: { role },
+          data: { role: 'teacher' },
         },
       })
 
@@ -69,27 +66,6 @@ export default function SignupPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Role selection */}
-            <div>
-              <p className="block text-sm font-medium text-gray-700 mb-2">역할 선택</p>
-              <div className="grid grid-cols-2 gap-3">
-                {(['teacher', 'student'] as Role[]).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
-                      role === r
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
-                  >
-                    {r === 'teacher' ? '🏫 교사' : '📖 학생'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 이메일
