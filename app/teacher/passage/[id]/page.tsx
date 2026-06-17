@@ -96,6 +96,15 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
     }
   }
 
+  async function seedParaSummaries(paragraphs: { no: number; summary?: string }[]) {
+    if (!passage) return
+    const summaries = paragraphs
+      .filter(p => p.summary?.trim())
+      .map(p => ({ no: p.no, content: p.summary! }))
+    if (!summaries.length) return
+    await supabase.from('passages').update({ paragraph_summaries: summaries }).eq('id', passage.id)
+  }
+
   async function handleMockAnalyze() {
     if (!passage) return
     const { error } = await supabase.from('teacher_analyses').upsert({
@@ -104,6 +113,7 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       updated_at: new Date().toISOString(),
     }, { onConflict: 'passage_id' })
     if (!error) {
+      await seedParaSummaries(MOCK_ANALYSIS.paragraphs)
       await fetchPassage()
       setIsDirty(false)
     }
@@ -121,6 +131,9 @@ export default function TeacherPassagePage({ params }: { params: Promise<{ id: s
       })
       const data = await res.json()
       if (!res.ok) { setAnalyzeError(data.error ?? 'AI 분석 중 오류가 발생했습니다.'); return }
+      if (data.paragraphs && !passage.paragraph_summaries?.length) {
+        await seedParaSummaries(data.paragraphs)
+      }
       await fetchPassage()
       setIsDirty(false)
     } catch {
